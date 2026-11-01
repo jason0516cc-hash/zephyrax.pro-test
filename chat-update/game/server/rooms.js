@@ -50,6 +50,7 @@ import { netLog } from './netLog.js';
 import { tellBot, tellBotKept, restoreKeptBotNews } from './discord.js';
 import { createPetalUsage } from './petalUsage.js';
 import { createServerReset, BOOT_ID } from './serverReset.js';
+import { CHAT_BADGES } from './config.js';
 
 const ROOM_IDS = ['lobby', ...BIOME_ROOMS];
 /** A room a player can be out in the world in (not the homescreen). */
@@ -207,8 +208,9 @@ export function startRooms(db, { restart } = {}) {
     }
   }
 
-  /** What a player's room is told about them: name, clan tag, the skin they wear. */
+  /** What a player's room is told about them: name, clan tag, chat badges (config.js CHAT_BADGES), the skin they wear. */
   const infoOf = e => ({ ...e.conn.info, displayName: e.displayName, clanTag: e.clanTag ?? null, skinRef: e.skinRef ?? '',
+                         badges: CHAT_BADGES[String(e.conn.info.username ?? '').toLowerCase()] ?? [],
                          linked: !!db.profileById(e.id)?.discord_id });   // (linked to Discord: the Ghost Flower's Convert — room/worker.js)
 
   /** `profileId` published, wore or took off a skin (api.js): their room, squad and browser hear it. */

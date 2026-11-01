@@ -1,10 +1,12 @@
 /**
  * client/ui/chat.js — In-game chat bar
  *
- * Format: [Global] [Lvl N] [username] Display name: message — the first tag is
- *   the channel; the username is the account's (or the guest tag, "Guest
- *   #A7K2"); the display name is the homescreen name box. Lines go through the
- *   server (server/room/worker.js).
+ * Format: [Global] [CLAN] [Dev] [Lvl N] [username] Display name: message — the
+ *   first tag is the channel; then the clan tag (clan members only, clan blue);
+ *   then any badges (server/config.js CHAT_BADGES, each in its own colour); the
+ *   username is the account's (or the guest tag, "Guest #A7K2"); the display
+ *   name is the homescreen name box. Lines go through the server
+ *   (server/room/worker.js).
  * - Three channels: Global — everyone in your biome (on the homescreen:
  *   everyone there); Squad — only your squad, and Clan — only your clan,
  *   wherever they are. Tab while typing switches between the ones you're in —
@@ -21,7 +23,8 @@
  * - Messages slide in from the left, appearing after the button column
  * - Chat positioned bottom-left, starting just right of the icon buttons
  * - Press Enter or click bar to open; Enter/Escape to close
- * - 50 char limit; messages fade 10s after chat closes
+ * - 50 char limit; messages fade 10s after chat closes; the last 300 lines are
+ *   kept (scroll up while chat is open to read them)
  * - Opening chat re-reveals faded/fading messages; closing re-arms their fade
  * - Up/Down arrows while typing cycle through previously sent messages
  * - Closing chat with unsent text keeps that text in the box for next time
@@ -60,7 +63,7 @@ import { appendEmojis } from './emojis.js';
 const MAX_CHARS    = CHAT_MAX_CHARS;
 const FADE_DELAY   = 10000;   // ms after close before fade starts
 const FADE_DUR     = 1200;    // ms for CSS fade-out
-const MAX_MESSAGES = 50;
+const MAX_MESSAGES = 300;   // lines kept in the log before the oldest are removed
 const REOPEN_FADE_DELAY = 300; // ms after close before old messages start re-fading (re-close behavior)
 const MAX_HISTORY  = 50;      // how many sent messages are kept for up/down recall
 
@@ -690,7 +693,7 @@ onNet('crafted', m => {
 // Reading back: a new line only scrolls the log down to it if you were
 // already at the bottom (or chat is closed). Scrolled up, the view stays on
 // what you're reading — the oldest lines trimmed off the top are made up for.
-const LOG_GAP = 3;   // (#chat-log's gap between lines)
+const LOG_GAP = 1;   // (#chat-log's gap between lines)
 function followingLog() {
   return !chatOpen || logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 30;
 }
@@ -742,7 +745,7 @@ function submitMessage(text) {
 }
 
 /** A chat line from the server: [Global] [Lvl N] [username] display name: text. */
-function addChatLine({ ch, lvl, tag, name, color, text }) {
+function addChatLine({ ch, lvl, tag, name, color, text, clan, badges }) {
   if (!logEl) return;
   const el = document.createElement('div');
   el.className = 'chat-msg';
@@ -752,6 +755,24 @@ function addChatLine({ ch, lvl, tag, name, color, text }) {
   chSpan.className = `chat-ch ${channelOf(ch)}`;
   chSpan.textContent = CHANNEL_LABEL[channelOf(ch)] + ' ';
   el.appendChild(chSpan);
+
+  // [CLAN] — the clan tag, for clan members
+  if (clan) {
+    const clanSpan = document.createElement('span');
+    clanSpan.className = 'chat-clan-tag';
+    clanSpan.textContent = `[${clan}] `;
+    el.appendChild(clanSpan);
+  }
+
+  // Badges: [Dev]… (server/config.js CHAT_BADGES)
+  for (const b of Array.isArray(badges) ? badges : []) {
+    if (!b?.text) continue;
+    const badge = document.createElement('span');
+    badge.className = 'chat-badge';
+    if (b.color) badge.style.color = b.color;
+    badge.textContent = `[${b.text}] `;
+    el.appendChild(badge);
+  }
 
   // Level badge
   const lvlSpan = document.createElement('span');
@@ -936,7 +957,7 @@ function injectStyles() {
     #chat-log {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 1px;
       max-height: 160px;
       overflow-y: hidden;
       overflow-x: hidden;
@@ -964,10 +985,10 @@ function injectStyles() {
     .chat-msg {
       display: inline-block;
       align-self: flex-start;
-      padding: 1px 2px;
-      font-size: 12px;
-      ${outline(2.5, 'rgba(0, 0, 0, 0.85)')}
-      line-height: 1.45;
+      padding: 0 2px;
+      font-size: 10.5px;
+      ${outline(2, 'rgba(0, 0, 0, 0.85)')}
+      line-height: 1.3;
       color: #e8e8f0;
       max-width: 100%;
       word-break: break-word;
@@ -1025,7 +1046,7 @@ function injectStyles() {
 
     .chat-lvl {
       font-weight: 700;
-      font-size: 11px;
+      font-size: 9.5px;
     }
 
     .chat-tag {
@@ -1041,7 +1062,9 @@ function injectStyles() {
     .chat-text { color: #e8e8f0; }
 
     /* Channels: [Global] / [Squad] — in squad lines the name is pink too */
-    .chat-ch { font-weight: 700; font-size: 11px; }
+    .chat-ch { font-weight: 700; font-size: 9.5px; }
+    .chat-clan-tag { font-weight: 700; font-size: 9.5px; color: #5d99e0; }   /* (the Clan button's blue) */
+    .chat-badge { font-weight: 700; font-size: 9.5px; color: #ffd166; }
     .chat-ch.global { color: #9fb2d8; }
     .chat-ch.squad,
     .chat-name.squad { color: #ff8fd8; }

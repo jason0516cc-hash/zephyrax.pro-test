@@ -656,6 +656,8 @@ function postChatLine(member, text, ch) {
     id: p.id,   // (whose flower its chat bubble floats over — client/render/chatBubbles.js)
     lvl: p.level + 1, tag: member.info.tag, name: member.info.displayName || 'Unnamed',
     color: rarityText(highestHotbarRarity(p)), text,
+    clan: p.clanTag ?? null,                                              // [CLAN] (server/clans.js → applyInfo)
+    badges: Array.isArray(member.info.badges) ? member.info.badges : [],  // [Dev]… (server/config.js CHAT_BADGES)
   };
   // Global: everyone in this room. Squad / clan: the main thread hands it to
   // every member, wherever they are (server/squads.js, server/clans.js).

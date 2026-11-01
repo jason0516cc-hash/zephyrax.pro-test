@@ -38,6 +38,16 @@ export const ALLOWED_HOSTS = [
 export const ADMIN_USERNAMES = ['vyx'];
 
 /**
+ * Chat badges: extra [tags] shown in someone's chat lines, after their clan
+ * tag — "[Global] [CLAN] [Dev] [Lvl 50] [vyx] Vyx: hi". Username (lower case)
+ * → a list of { text, color }. Add a line here to give someone a badge; the
+ * server picks them up the next time that player connects.
+ */
+export const CHAT_BADGES = {
+  vyx: [{ text: 'Dev', color: '#ff5d5d' }],
+};
+
+/**
  * The Discord bot's key to the /bot routes (server/discord.js): GAME_BOT_SECRET
  * in this folder's .env, the same as in ZephBot/bot/.env. Never put it in the
  * code. Empty: the bot can't reach the game (linking, ?profile stats).
